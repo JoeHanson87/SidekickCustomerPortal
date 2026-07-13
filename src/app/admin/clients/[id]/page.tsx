@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getClientById, updateClient, getClients, getClientProofs, updateClientProofs, getClientProofImages, updateClientProofImages } from '@/lib/admin';
 import PRODUCTS from '@/lib/products';
 import type { ClientRecord, PriceTier } from '@/lib/admin';
@@ -442,9 +443,11 @@ export default function ClientEditPage({ params }: PageProps) {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      <img
+                      <Image
                         src={image.imageUrl}
                         alt={`${image.proofId} - ${image.categoryId}`}
+                        width={48}
+                        height={48}
                         className="w-12 h-12 rounded object-cover flex-shrink-0"
                       />
                       <div className="min-w-0 flex-1">
