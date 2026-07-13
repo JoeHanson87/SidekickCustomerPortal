@@ -25,8 +25,42 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const categoryId = searchParams.get('categoryId');
   const proofId = searchParams.get('proofId');
+  const clientId = searchParams.get('clientId');
 
   const supabase = createSupabaseServer();
+
+  // If clientId is provided, only return images assigned to this client
+  if (clientId) {
+    // Get the IDs of proof images assigned to this client
+    const { data: clientImageData, error: clientError } = await supabase
+      .from('client_proof_images')
+      .select('proof_image_id')
+      .eq('client_id', clientId);
+
+    if (clientError) {
+      return NextResponse.json({ error: clientError.message }, { status: 500 });
+    }
+
+    const assignedImageIds = (clientImageData ?? []).map((row) => row.proof_image_id as string);
+
+    // If no images assigned, return empty
+    if (assignedImageIds.length === 0) {
+      return NextResponse.json({ images: [] });
+    }
+
+    // Query proof images with the assigned IDs
+    let query = supabase.from('proof_images').select('*').in('id', assignedImageIds);
+    if (categoryId) query = query.eq('category_id', categoryId);
+    if (proofId) query = query.eq('proof_id', proofId);
+
+    const { data, error } = await query;
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ images: (data ?? []).map(toRecord) });
+  }
+
+  // No clientId: return all images (for admin usage)
   let query = supabase.from('proof_images').select('*');
   if (categoryId) query = query.eq('category_id', categoryId);
   if (proofId) query = query.eq('proof_id', proofId);

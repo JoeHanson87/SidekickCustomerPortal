@@ -111,11 +111,25 @@ values
 on conflict (client_id, proof_id) do nothing;
 
 -- ---------------------------------------------------------------------------
+-- Client proof images table
+-- Links specific proof images to specific clients (each client can have custom images)
+-- ---------------------------------------------------------------------------
+create table if not exists public.client_proof_images (
+  client_id      text not null,
+  proof_image_id text not null,
+  created_at     timestamptz default now(),
+  primary key (client_id, proof_image_id),
+  foreign key (client_id) references public.clients(id) on delete cascade,
+  foreign key (proof_image_id) references public.proof_images(id) on delete cascade
+);
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security — disable for simplicity (all access via service role key)
 -- Or enable RLS and add policies that match your auth strategy.
 -- ---------------------------------------------------------------------------
-alter table public.clients      disable row level security;
-alter table public.proof_images disable row level security;
+alter table public.clients               disable row level security;
+alter table public.proof_images          disable row level security;
+alter table public.client_proof_images   disable row level security;
 
 -- ---------------------------------------------------------------------------
 -- Storage bucket for proof images

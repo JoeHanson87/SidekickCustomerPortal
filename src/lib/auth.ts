@@ -1,6 +1,7 @@
 const AUTH_KEY = 'sidekick_user';
 
 export interface User {
+  id: string;
   email: string;
   company: string;
   name: string;

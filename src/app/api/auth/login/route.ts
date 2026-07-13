@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabase
     .from('clients')
-    .select('email, company, name')
+    .select('id, email, company, name')
     .ilike('email', email)
     .eq('password', password)
     .single();
@@ -18,6 +18,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     user: {
+      id: data.id as string,
       email: data.email as string,
       company: data.company as string,
       name: data.name as string,
