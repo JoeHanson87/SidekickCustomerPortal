@@ -8,6 +8,7 @@ import { getUser } from '@/lib/auth';
 import { useCart } from '@/context/CartContext';
 import type { Proof, ProductCategory } from '@/lib/products';
 import type { User } from '@/lib/auth';
+import type { ProofImageRecord } from '@/app/api/proof-images/route';
 import ProofImage from '@/components/ProofImage';
 import ChangesModal from '@/components/ChangesModal';
 
@@ -26,12 +27,34 @@ export default function ProductPage({ params }: PageProps) {
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [showChangesModal, setShowChangesModal] = useState(false);
   const [addedToBasket, setAddedToBasket] = useState(false);
+  const [proofImages, setProofImages] = useState<ProofImageRecord[]>([]);
 
   useEffect(() => {
-    const u = getUser();
-    setUser(u);
-    if (u) setProducts(getProductsForClient(u.email));
+    async function load() {
+      const u = getUser();
+      setUser(u);
+      if (u) {
+        const prods = await getProductsForClient(u.email);
+        setProducts(prods);
+      }
+    }
+    load();
   }, []);
+
+  // Fetch proof images for this category once the category is known
+  useEffect(() => {
+    async function loadImages() {
+      try {
+        const res = await fetch(`/api/proof-images?categoryId=${category}`);
+        if (!res.ok) return;
+        const json = await res.json() as { images: ProofImageRecord[] };
+        setProofImages(json.images ?? []);
+      } catch {
+        // ignore — images are optional
+      }
+    }
+    loadImages();
+  }, [category]);
 
   const product = products.find((p) => p.id === category);
 
@@ -142,6 +165,7 @@ export default function ProductPage({ params }: PageProps) {
                   productName={activeProof.name}
                   company={user?.company ?? 'Your Company'}
                   categoryId={product.id}
+                  imageUrl={proofImages.find((img) => img.proofId === activeProof.id)?.imageUrl}
                 />
                 <p className="text-xs text-gray-400 text-center mt-2">
                   Proof reference: PROOF-{activeProof.id.toUpperCase()} · Click to zoom (coming soon)

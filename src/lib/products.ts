@@ -10,6 +10,8 @@ export interface Proof {
   description: string;
   specifications: string[];
   priceTiers: PriceTier[];
+  /** URL of the uploaded proof image, if one has been set by admin */
+  imageUrl?: string;
 }
 
 export interface ProductCategory {

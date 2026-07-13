@@ -2,6 +2,7 @@ interface ProofImageProps {
   productName: string;
   company: string;
   categoryId: string;
+  imageUrl?: string;
 }
 
 const PROOF_CONFIGS: Record<string, { bg: string; accent: string; shape: string }> = {
@@ -12,8 +13,21 @@ const PROOF_CONFIGS: Record<string, { bg: string; accent: string; shape: string 
   'promotional': { bg: '#BE185D', accent: '#F472B6', shape: 'mug' },
 };
 
-export default function ProofImage({ productName, company, categoryId }: ProofImageProps) {
+export default function ProofImage({ productName, company, categoryId, imageUrl }: ProofImageProps) {
   const cfg = PROOF_CONFIGS[categoryId] ?? { bg: '#374151', accent: '#9CA3AF', shape: 'card' };
+
+  if (imageUrl) {
+    return (
+      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-50 border border-gray-200 shadow-sm">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt={`Proof image for ${productName}`}
+          className="w-full h-full object-contain"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-50 border border-gray-200 shadow-sm">

@@ -14,8 +14,14 @@ export default function BasketPage() {
   const [products, setProducts] = useState<ProductCategory[]>([]);
 
   useEffect(() => {
-    const u = getUser();
-    if (u) setProducts(getProductsForClient(u.email));
+    async function load() {
+      const u = getUser();
+      if (u) {
+        const prods = await getProductsForClient(u.email);
+        setProducts(prods);
+      }
+    }
+    load();
   }, []);
 
   const handleQuantityChange = (
