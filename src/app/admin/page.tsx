@@ -1,44 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { login } from '@/lib/auth';
-import { getClients } from '@/lib/admin';
+import { loginAsAdmin } from '@/lib/admin';
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showDemo, setShowDemo] = useState(false);
-  const [demoAccounts, setDemoAccounts] = useState<{ email: string; password: string; company: string }[]>([]);
-
-  useEffect(() => {
-    setDemoAccounts(
-      getClients().map(({ email, password, company }) => ({ email, password, company }))
-    );
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const user = login(email, password);
-    if (user) {
-      router.push('/dashboard');
+    await new Promise((r) => setTimeout(r, 400));
+    const ok = loginAsAdmin(email, password);
+    if (ok) {
+      router.push('/admin/dashboard');
     } else {
-      setError('Invalid email or password. Please try again.');
+      setError('Invalid admin credentials. Please try again.');
       setLoading(false);
     }
-  };
-
-  const fillDemo = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setShowDemo(false);
-    setError('');
   };
 
   return (
@@ -48,7 +32,7 @@ export default function LoginPage() {
         <div className="max-w-6xl mx-auto flex items-center gap-3">
           <SidekickLogo />
           <span className="text-white text-sm font-medium tracking-wide opacity-70">
-            Partner Portal
+            Admin Portal
           </span>
         </div>
       </header>
@@ -58,10 +42,23 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-brand-dark">Welcome back</h1>
-              <p className="text-gray-500 mt-1 text-sm">
-                Sign in to access your branded products
-              </p>
+              <div className="w-14 h-14 bg-brand-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-7 h-7 text-brand-accent"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                  />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-brand-dark">Admin sign in</h1>
+              <p className="text-gray-500 mt-1 text-sm">Sidekick administration portal</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -74,15 +71,13 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  placeholder="admin@sidekickltd.com"
                   className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
                   type="password"
                   required
@@ -107,46 +102,11 @@ export default function LoginPage() {
                 {loading ? 'Signing in…' : 'Sign in'}
               </button>
             </form>
-
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <button
-                onClick={() => setShowDemo(!showDemo)}
-                className="w-full text-xs text-gray-400 hover:text-gray-600 transition text-center"
-              >
-                {showDemo ? 'Hide demo accounts ▲' : 'View demo accounts ▼'}
-              </button>
-
-              {showDemo && (
-                <div className="mt-3 space-y-2 animate-fade-in">
-                  {demoAccounts.map((d) => (
-                    <button
-                      key={d.email}
-                      onClick={() => fillDemo(d.email, d.password)}
-                      className="w-full text-left px-4 py-3 rounded-lg border border-gray-100 hover:border-brand-accent hover:bg-amber-50 transition text-sm group"
-                    >
-                      <span className="font-medium text-gray-800 group-hover:text-brand-dark">
-                        {d.company}
-                      </span>
-                      <span className="block text-xs text-gray-400 mt-0.5">{d.email}</span>
-                    </button>
-                  ))}
-                  <p className="text-xs text-gray-400 text-center pt-1">
-                    All demo accounts use password: <code className="font-mono">demo123</code>
-                  </p>
-                </div>
-              )}
-            </div>
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-6">
-            Need access?{' '}
-            <a href="mailto:hello@sidekickltd.com" className="text-brand-accent hover:underline">
-              Contact Sidekick
-            </a>
-          </p>
-          <p className="text-center text-xs text-gray-400 mt-2">
-            <a href="/admin" className="hover:text-gray-500 transition">
-              Admin login →
+            <a href="/" className="text-brand-accent hover:underline">
+              ← Back to client portal
             </a>
           </p>
         </div>

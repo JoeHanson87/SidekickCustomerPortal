@@ -1,13 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import PRODUCTS from '@/lib/products';
+import { getUser } from '@/lib/auth';
+import { getProductsForClient } from '@/lib/admin';
+import type { ProductCategory } from '@/lib/products';
 
 export default function BasketPage() {
   const router = useRouter();
   const { items, subtotal, vat, grandTotal, removeItem, updateQuantity } = useCart();
+  const [products, setProducts] = useState<ProductCategory[]>([]);
+
+  useEffect(() => {
+    const u = getUser();
+    if (u) setProducts(getProductsForClient(u.email));
+  }, []);
 
   const handleQuantityChange = (
     itemId: string,
@@ -15,7 +24,7 @@ export default function BasketPage() {
     proofId: string,
     tierIndex: number
   ) => {
-    const product = PRODUCTS.find((p) => p.id === categoryId);
+    const product = products.find((p) => p.id === categoryId);
     const proof = product?.proofs.find((pr) => pr.id === proofId);
     if (!proof) return;
     const tier = proof.priceTiers[tierIndex];
@@ -60,7 +69,7 @@ export default function BasketPage() {
         {/* Item list */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => {
-            const product = PRODUCTS.find((p) => p.id === item.categoryId);
+            const product = products.find((p) => p.id === item.categoryId);
             const proof = product?.proofs.find((pr) => pr.id === item.proofId);
             const currentTierIndex = proof?.priceTiers.findIndex(
               (t) => t.quantity === item.quantity

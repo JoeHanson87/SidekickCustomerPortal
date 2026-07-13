@@ -1,24 +1,19 @@
+import { getClients } from './admin';
+
 export interface User {
   email: string;
   company: string;
   name: string;
 }
 
-const DEMO_USERS: (User & { password: string })[] = [
-  { email: 'hello@acmecorp.com', password: 'demo123', company: 'Acme Corporation', name: 'Sarah Thompson' },
-  { email: 'admin@techstart.co.uk', password: 'demo123', company: 'TechStart Ltd', name: 'James Carter' },
-  { email: 'info@bloomdesign.com', password: 'demo123', company: 'Bloom Design Studio', name: 'Emma Wilson' },
-];
-
 const AUTH_KEY = 'sidekick_user';
 
 export function login(email: string, password: string): User | null {
-  const user = DEMO_USERS.find(
-    (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+  const client = getClients().find(
+    (c) => c.email.toLowerCase() === email.toLowerCase() && c.password === password
   );
-  if (!user) return null;
-  const { password: _pw, ...userData } = user;
-  void _pw;
+  if (!client) return null;
+  const userData: User = { email: client.email, company: client.company, name: client.name };
   if (typeof window !== 'undefined') {
     localStorage.setItem(AUTH_KEY, JSON.stringify(userData));
   }
@@ -45,9 +40,3 @@ export function getUser(): User | null {
 export function isLoggedIn(): boolean {
   return getUser() !== null;
 }
-
-export const DEMO_CREDENTIALS = DEMO_USERS.map(({ email, password, company }) => ({
-  email,
-  password,
-  company,
-}));
