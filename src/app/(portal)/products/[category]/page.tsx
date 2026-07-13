@@ -45,7 +45,10 @@ export default function ProductPage({ params }: PageProps) {
   useEffect(() => {
     async function loadImages() {
       try {
-        const res = await fetch(`/api/proof-images?categoryId=${category}`);
+        const url = user && user.id
+          ? `/api/proof-images?categoryId=${category}&clientId=${user.id}`
+          : `/api/proof-images?categoryId=${category}`;
+        const res = await fetch(url);
         if (!res.ok) return;
         const json = await res.json() as { images: ProofImageRecord[] };
         setProofImages(json.images ?? []);
@@ -54,7 +57,7 @@ export default function ProductPage({ params }: PageProps) {
       }
     }
     loadImages();
-  }, [category]);
+  }, [category, user]);
 
   const product = products.find((p) => p.id === category);
 

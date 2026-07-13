@@ -116,6 +116,21 @@ export async function updateClientProofs(clientId: string, proofIds: string[]): 
   });
 }
 
+export async function getClientProofImages(clientId: string): Promise<string[]> {
+  const res = await fetch(`/api/client-proof-images?clientId=${clientId}`);
+  if (!res.ok) return [];
+  const json = await res.json() as { proofImageIds: string[] };
+  return json.proofImageIds ?? [];
+}
+
+export async function updateClientProofImages(clientId: string, proofImageIds: string[]): Promise<void> {
+  await fetch('/api/client-proof-images', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId, proofImageIds }),
+  });
+}
+
 export async function getProductsForClient(email: string): Promise<ProductCategory[]> {
   const client = await getClientByEmail(email);
   if (!client) return PRODUCTS;
