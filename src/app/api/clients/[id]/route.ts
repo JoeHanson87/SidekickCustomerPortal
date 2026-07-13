@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServer } from '@/lib/supabase';
-import type { ClientRecord } from '@/lib/admin';
+import type { ClientRecord, PriceTier } from '@/lib/admin';
 
 function toClientRecord(row: Record<string, unknown>): ClientRecord {
   return {
@@ -10,7 +10,7 @@ function toClientRecord(row: Record<string, unknown>): ClientRecord {
     company: row.company as string,
     name: row.name as string,
     enabledProducts: row.enabled_products as string[],
-    customPricing: row.custom_pricing as Record<string, unknown>,
+    customPricing: (row.custom_pricing ?? {}) as Record<string, PriceTier[]>,
   };
 }
 
