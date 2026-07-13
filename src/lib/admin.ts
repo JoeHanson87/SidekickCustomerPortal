@@ -101,15 +101,35 @@ export async function getClientByEmail(email: string): Promise<ClientRecord | nu
 // Product resolution for a client
 // ---------------------------------------------------------------------------
 
+export async function getClientProofs(clientId: string): Promise<string[]> {
+  const res = await fetch(`/api/client-proofs?clientId=${clientId}`);
+  if (!res.ok) return [];
+  const json = await res.json() as { proofIds: string[] };
+  return json.proofIds ?? [];
+}
+
+export async function updateClientProofs(clientId: string, proofIds: string[]): Promise<void> {
+  await fetch('/api/client-proofs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientId, proofIds }),
+  });
+}
+
 export async function getProductsForClient(email: string): Promise<ProductCategory[]> {
   const client = await getClientByEmail(email);
   if (!client) return PRODUCTS;
 
+  // Get the client's allowed proofs
+  const allowedProofIds = await getClientProofs(client.id);
+
   return PRODUCTS.filter((p) => client.enabledProducts.includes(p.id)).map((p) => ({
     ...p,
-    proofs: p.proofs.map((proof) => ({
-      ...proof,
-      priceTiers: client.customPricing[proof.id] ?? proof.priceTiers,
-    })),
+    proofs: p.proofs
+      .filter((proof) => allowedProofIds.length === 0 || allowedProofIds.includes(proof.id))
+      .map((proof) => ({
+        ...proof,
+        priceTiers: client.customPricing[proof.id] ?? proof.priceTiers,
+      })),
   }));
 }
