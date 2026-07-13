@@ -1,0 +1,160 @@
+import { NextResponse } from 'next/server';
+import { createSupabaseServer } from '@/lib/supabase';
+
+export interface ClientSpecificProofImageRecord {
+  id: string;
+  clientId: string;
+  categoryId: string;
+  proofId: string;
+  imageUrl: string;
+  storagePath: string;
+  uploadedAt: string;
+}
+
+function toRecord(row: Record<string, unknown>): ClientSpecificProofImageRecord {
+  return {
+    id: row.id as string,
+    clientId: row.client_id as string,
+    categoryId: row.category_id as string,
+    proofId: row.proof_id as string,
+    imageUrl: row.image_url as string,
+    storagePath: row.storage_path as string,
+    uploadedAt: row.uploaded_at as string,
+  };
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const clientId = searchParams.get('clientId');
+  const categoryId = searchParams.get('categoryId');
+  const proofId = searchParams.get('proofId');
+
+  if (!clientId) {
+    return NextResponse.json({ error: 'clientId is required' }, { status: 400 });
+  }
+
+  const supabase = createSupabaseServer();
+
+  let query = supabase.from('client_specific_proof_images').select('*').eq('client_id', clientId);
+  if (categoryId) query = query.eq('category_id', categoryId);
+  if (proofId) query = query.eq('proof_id', proofId);
+
+  const { data, error } = await query;
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ images: (data ?? []).map(toRecord) });
+}
+
+export async function POST(request: Request) {
+  const formData = await request.formData();
+  const file = formData.get('file') as File | null;
+  const clientId = formData.get('clientId') as string | null;
+  const categoryId = formData.get('categoryId') as string | null;
+  const proofId = formData.get('proofId') as string | null;
+
+  if (!file || !clientId || !categoryId || !proofId) {
+    return NextResponse.json(
+      { error: 'file, clientId, categoryId and proofId are required' },
+      { status: 400 }
+    );
+  }
+
+  const supabase = createSupabaseServer();
+
+  // Upload file to Supabase Storage
+  const ext = file.name.split('.').pop() ?? 'jpg';
+  const storagePath = `${clientId}/${categoryId}/${proofId}.${ext}`;
+  const arrayBuffer = await file.arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage
+    .from('proof-images')
+    .upload(storagePath, arrayBuffer, {
+      contentType: file.type,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  }
+
+  // Get the public URL
+  const { data: urlData } = supabase.storage
+    .from('proof-images')
+    .getPublicUrl(storagePath);
+  const imageUrl = urlData.publicUrl;
+
+  // Upsert the record in the database (one image per client+category+proof)
+  const id = `${clientId}-${categoryId}-${proofId}`;
+  const { error: dbError } = await supabase.from('client_specific_proof_images').upsert({
+    id,
+    client_id: clientId,
+    category_id: categoryId,
+    proof_id: proofId,
+    image_url: imageUrl,
+    storage_path: storagePath,
+    uploaded_at: new Date().toISOString(),
+  });
+
+  if (dbError) {
+    return NextResponse.json({ error: dbError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    image: {
+      id,
+      clientId,
+      categoryId,
+      proofId,
+      imageUrl,
+      storagePath,
+      uploadedAt: new Date().toISOString(),
+    } as ClientSpecificProofImageRecord,
+  });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json({ error: 'id is required' }, { status: 400 });
+  }
+
+  const supabase = createSupabaseServer();
+
+  // Get the image to retrieve storage path
+  const { data: imageData, error: getError } = await supabase
+    .from('client_specific_proof_images')
+    .select('storage_path')
+    .eq('id', id)
+    .single();
+
+  if (getError) {
+    return NextResponse.json({ error: getError.message }, { status: 500 });
+  }
+
+  const storagePath = (imageData as Record<string, unknown>)?.storage_path as string;
+
+  // Delete from storage
+  const { error: deleteStorageError } = await supabase.storage
+    .from('proof-images')
+    .remove([storagePath]);
+
+  if (deleteStorageError) {
+    return NextResponse.json({ error: deleteStorageError.message }, { status: 500 });
+  }
+
+  // Delete from database
+  const { error: dbError } = await supabase
+    .from('client_specific_proof_images')
+    .delete()
+    .eq('id', id);
+
+  if (dbError) {
+    return NextResponse.json({ error: dbError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
