@@ -1,16 +1,30 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { getClientById, updateClient, getClients, getClientProofs, updateClientProofs, getClientProofImages, updateClientProofImages } from '@/lib/admin';
+import {
+  getClientById,
+  updateClient,
+  getClients,
+  getClientProofs,
+  updateClientProofs,
+  getClientSpecificProofImages,
+  uploadClientProofImage,
+  deleteClientProofImage,
+} from '@/lib/admin';
 import PRODUCTS from '@/lib/products';
 import type { ClientRecord, PriceTier } from '@/lib/admin';
-import type { ProofImageRecord } from '@/app/api/proof-images/route';
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+interface ClientSpecificImage {
+  id: string;
+  categoryId: string;
+  proofId: string;
+  imageUrl: string;
 }
 
 export default function ClientEditPage({ params }: PageProps) {
@@ -22,11 +36,12 @@ export default function ClientEditPage({ params }: PageProps) {
   const [enabledProducts, setEnabledProducts] = useState<string[]>([]);
   const [customPricing, setCustomPricing] = useState<Record<string, PriceTier[]>>({});
   const [clientProofIds, setClientProofIds] = useState<string[]>([]);
-  const [clientProofImageIds, setClientProofImageIds] = useState<string[]>([]);
-  const [allProofImages, setAllProofImages] = useState<ProofImageRecord[]>([]);
+  const [clientSpecificImages, setClientSpecificImages] = useState<ClientSpecificImage[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [uploadingProof, setUploadingProof] = useState<string | null>(null);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -41,19 +56,8 @@ export default function ClientEditPage({ params }: PageProps) {
       setCustomPricing(JSON.parse(JSON.stringify(c.customPricing)));
       const proofIds = await getClientProofs(c.id);
       setClientProofIds(proofIds);
-      const proofImageIds = await getClientProofImages(c.id);
-      setClientProofImageIds(proofImageIds);
-      
-      // Load all available proof images
-      try {
-        const res = await fetch('/api/proof-images');
-        if (res.ok) {
-          const json = await res.json() as { images: ProofImageRecord[] };
-          setAllProofImages(json.images ?? []);
-        }
-      } catch {
-        // ignore
-      }
+      const images = await getClientSpecificProofImages(c.id);
+      setClientSpecificImages(images);
     }
     load();
   }, [id, router]);
@@ -68,7 +72,6 @@ export default function ClientEditPage({ params }: PageProps) {
     }
     await updateClient(id, { ...form, enabledProducts, customPricing });
     await updateClientProofs(id, clientProofIds);
-    await updateClientProofImages(id, clientProofImageIds);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -85,11 +88,39 @@ export default function ClientEditPage({ params }: PageProps) {
     );
   };
 
-  const toggleProofImage = (proofImageId: string) => {
-    setClientProofImageIds((prev) =>
-      prev.includes(proofImageId) ? prev.filter((id) => id !== proofImageId) : [...prev, proofImageId]
-    );
+  const handleProofImageUpload = async (categoryId: string, proofId: string, file: File) => {
+    if (!client) return;
+    const key = `${categoryId}-${proofId}`;
+    setUploadingProof(key);
+    try {
+      const image = await uploadClientProofImage(client.id, categoryId, proofId, file);
+      setClientSpecificImages((prev) => {
+        const filtered = prev.filter(
+          (img) => !(img.categoryId === categoryId && img.proofId === proofId)
+        );
+        return [...filtered, image];
+      });
+    } catch {
+      // Error handling could be improved with toast notifications
+    } finally {
+      setUploadingProof(null);
+    }
   };
+
+  const handleProofImageDelete = async (imageId: string) => {
+    setDeletingImage(imageId);
+    try {
+      await deleteClientProofImage(imageId);
+      setClientSpecificImages((prev) => prev.filter((img) => img.id !== imageId));
+    } catch {
+      // Error handling could be improved with toast notifications
+    } finally {
+      setDeletingImage(null);
+    }
+  };
+
+  const getClientImage = (categoryId: string, proofId: string) =>
+    clientSpecificImages.find((img) => img.categoryId === categoryId && img.proofId === proofId);
 
   const getEffectiveTiers = (proofId: string): PriceTier[] => {
     if (customPricing[proofId]) return customPricing[proofId];
@@ -417,53 +448,137 @@ export default function ClientEditPage({ params }: PageProps) {
           )}
         </section>
 
-        {/* Proof images */}
+        {/* Proof images - Client specific uploads */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-bold text-brand-dark mb-1">Proof images</h2>
           <p className="text-sm text-gray-500 mb-5">
-            Assign specific proof images for this client. They will see only their assigned images when viewing proofs.
+            Upload proof images specific to this client. These images will be shown exclusively to this client.
           </p>
 
-          {allProofImages.length === 0 ? (
+          {enabledProducts.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">
-              No proof images available. Upload images in the proof images management area.
+              No products enabled. Enable products above to upload proof images.
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {allProofImages.map((image) => (
-                <label
-                  key={image.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-gray-100 hover:border-brand-accent/40 cursor-pointer transition group"
-                >
-                  <input
-                    type="checkbox"
-                    checked={clientProofImageIds.includes(image.id)}
-                    onChange={() => toggleProofImage(image.id)}
-                    className="accent-brand-accent w-4 h-4 shrink-0 mt-1"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start gap-2">
-                      <Image
-                        src={image.imageUrl}
-                        alt={`${image.proofId} - ${image.categoryId}`}
-                        width={48}
-                        height={48}
-                        className="w-12 h-12 rounded object-cover flex-shrink-0"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-brand-dark group-hover:text-brand-accent transition truncate">
-                          {image.proofId}
-                        </p>
-                        <p className="text-xs text-gray-400 truncate">{image.categoryId}</p>
-                      </div>
-                    </div>
+            <div className="space-y-6">
+              {PRODUCTS.filter((p) => enabledProducts.includes(p.id)).map((product) => (
+                <div key={product.id}>
+                  <h3 className="text-sm font-semibold text-brand-dark mb-3">{product.name}</h3>
+                  <div className="space-y-3">
+                    {product.proofs.map((proof) => {
+                      const image = getClientImage(product.id, proof.id);
+                      const key = `${product.id}-${proof.id}`;
+                      const isUploading = uploadingProof === key;
+                      const isDeleting = deletingImage === image?.id;
+
+                      return (
+                        <div
+                          key={proof.id}
+                          className="flex items-start gap-4 p-4 rounded-lg border border-gray-100 hover:border-brand-accent/20 transition"
+                        >
+                          {/* Image preview */}
+                          <div className="shrink-0">
+                            {image ? (
+                              <div className="relative w-24 h-20 rounded-lg overflow-hidden border border-gray-200">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={image.imageUrl}
+                                  alt={`Proof image for ${proof.name}`}
+                                  className="w-full h-full object-contain bg-gray-50"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-24 h-20 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
+                                <span className="text-xs text-gray-400 text-center px-1">No image</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Proof info and actions */}
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-gray-800">{proof.name}</h4>
+                            <p className="text-xs text-gray-400 mt-0.5">{proof.description}</p>
+                            <div className="flex gap-2 mt-3">
+                              <ClientImageUploadButton
+                                categoryId={product.id}
+                                proofId={proof.id}
+                                uploading={isUploading}
+                                onUpload={handleProofImageUpload}
+                              />
+                              {image && (
+                                <button
+                                  onClick={() => handleProofImageDelete(image.id)}
+                                  disabled={isDeleting}
+                                  className="text-xs text-red-500 hover:text-red-700 transition disabled:opacity-50"
+                                >
+                                  {isDeleting ? 'Removing…' : 'Remove'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </label>
+                </div>
               ))}
             </div>
           )}
         </section>
       </div>
     </div>
+  );
+}
+
+function ClientImageUploadButton({
+  categoryId,
+  proofId,
+  uploading,
+  onUpload,
+}: {
+  categoryId: string;
+  proofId: string;
+  uploading: boolean;
+  onUpload: (categoryId: string, proofId: string, file: File) => Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await onUpload(categoryId, proofId, file);
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleChange}
+      />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="flex items-center gap-1.5 text-xs font-medium text-brand-accent hover:text-brand-accent-hover border border-brand-accent hover:border-brand-accent-hover rounded-lg px-3 py-1.5 transition disabled:opacity-50"
+      >
+        {uploading ? (
+          'Uploading…'
+        ) : (
+          <>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
+            </svg>
+            Upload
+          </>
+        )}
+      </button>
+    </>
   );
 }

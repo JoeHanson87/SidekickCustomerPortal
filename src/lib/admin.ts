@@ -131,6 +131,58 @@ export async function updateClientProofImages(clientId: string, proofImageIds: s
   });
 }
 
+export async function getClientSpecificProofImages(
+  clientId: string
+): Promise<Array<{ id: string; categoryId: string; proofId: string; imageUrl: string }>> {
+  const res = await fetch(`/api/client-specific-proof-images?clientId=${clientId}`);
+  if (!res.ok) return [];
+  const json = await res.json() as {
+    images: Array<{ id: string; clientId: string; categoryId: string; proofId: string; imageUrl: string }>;
+  };
+  return (json.images ?? []).map((img) => ({
+    id: img.id,
+    categoryId: img.categoryId,
+    proofId: img.proofId,
+    imageUrl: img.imageUrl,
+  }));
+}
+
+export async function uploadClientProofImage(
+  clientId: string,
+  categoryId: string,
+  proofId: string,
+  file: File
+): Promise<{ id: string; categoryId: string; proofId: string; imageUrl: string }> {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('clientId', clientId);
+  fd.append('categoryId', categoryId);
+  fd.append('proofId', proofId);
+
+  const res = await fetch('/api/client-specific-proof-images', {
+    method: 'POST',
+    body: fd,
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to upload image');
+  }
+
+  const json = await res.json() as {
+    image: { id: string; clientId: string; categoryId: string; proofId: string; imageUrl: string };
+  };
+  return {
+    id: json.image.id,
+    categoryId: json.image.categoryId,
+    proofId: json.image.proofId,
+    imageUrl: json.image.imageUrl,
+  };
+}
+
+export async function deleteClientProofImage(id: string): Promise<void> {
+  await fetch(`/api/client-specific-proof-images?id=${id}`, { method: 'DELETE' });
+}
+
 export async function getProductsForClient(email: string): Promise<ProductCategory[]> {
   const client = await getClientByEmail(email);
   if (!client) return PRODUCTS;

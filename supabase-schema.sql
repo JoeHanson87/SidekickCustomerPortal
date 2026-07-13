@@ -124,12 +124,29 @@ create table if not exists public.client_proof_images (
 );
 
 -- ---------------------------------------------------------------------------
+-- Client-specific proof images table
+-- Stores proof images that are specific to each client (uploaded per client, per proof)
+-- ---------------------------------------------------------------------------
+create table if not exists public.client_specific_proof_images (
+  id           text primary key,
+  client_id    text not null,
+  category_id  text not null,
+  proof_id     text not null,
+  image_url    text not null,
+  storage_path text not null,
+  uploaded_at  timestamptz default now(),
+  foreign key (client_id) references public.clients(id) on delete cascade,
+  unique (client_id, category_id, proof_id)
+);
+
+-- ---------------------------------------------------------------------------
 -- Row Level Security — disable for simplicity (all access via service role key)
 -- Or enable RLS and add policies that match your auth strategy.
 -- ---------------------------------------------------------------------------
-alter table public.clients               disable row level security;
-alter table public.proof_images          disable row level security;
-alter table public.client_proof_images   disable row level security;
+alter table public.clients                           disable row level security;
+alter table public.proof_images                      disable row level security;
+alter table public.client_proof_images               disable row level security;
+alter table public.client_specific_proof_images      disable row level security;
 
 -- ---------------------------------------------------------------------------
 -- Storage bucket for proof images
