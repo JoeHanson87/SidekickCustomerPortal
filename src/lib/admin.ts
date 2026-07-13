@@ -21,39 +21,6 @@ const ADMIN_CREDENTIALS = {
 };
 
 const ADMIN_AUTH_KEY = 'sidekick_admin';
-const CLIENTS_KEY = 'sidekick_clients';
-
-const ALL_PRODUCT_IDS = ['stationery', 'brochures', 'clothing', 'fliers', 'promotional'];
-
-const SEED_CLIENTS: ClientRecord[] = [
-  {
-    id: '1',
-    email: 'hello@acmecorp.com',
-    password: 'demo123',
-    company: 'Acme Corporation',
-    name: 'Sarah Thompson',
-    enabledProducts: [...ALL_PRODUCT_IDS],
-    customPricing: {},
-  },
-  {
-    id: '2',
-    email: 'admin@techstart.co.uk',
-    password: 'demo123',
-    company: 'TechStart Ltd',
-    name: 'James Carter',
-    enabledProducts: [...ALL_PRODUCT_IDS],
-    customPricing: {},
-  },
-  {
-    id: '3',
-    email: 'info@bloomdesign.com',
-    password: 'demo123',
-    company: 'Bloom Design Studio',
-    name: 'Emma Wilson',
-    enabledProducts: [...ALL_PRODUCT_IDS],
-    customPricing: {},
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Admin auth
@@ -86,60 +53,56 @@ export function isAdmin(): boolean {
 export const ADMIN_EMAIL = ADMIN_CREDENTIALS.email;
 
 // ---------------------------------------------------------------------------
-// Client store (localStorage-persisted)
+// Client store (Supabase-persisted via API routes)
 // ---------------------------------------------------------------------------
 
-export function getClients(): ClientRecord[] {
-  if (typeof window === 'undefined') return [...SEED_CLIENTS];
-  const raw = localStorage.getItem(CLIENTS_KEY);
-  if (!raw) {
-    const seeded = SEED_CLIENTS.map((c) => ({ ...c }));
-    saveClients(seeded);
-    return seeded;
-  }
-  try {
-    return JSON.parse(raw) as ClientRecord[];
-  } catch {
-    return [...SEED_CLIENTS];
-  }
+export async function getClients(): Promise<ClientRecord[]> {
+  const res = await fetch('/api/clients');
+  if (!res.ok) return [];
+  const json = await res.json() as { clients: ClientRecord[] };
+  return json.clients ?? [];
 }
 
-export function saveClients(clients: ClientRecord[]): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
-  }
+export async function addClient(client: Omit<ClientRecord, 'id'>): Promise<ClientRecord> {
+  const res = await fetch('/api/clients', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(client),
+  });
+  const json = await res.json() as { client: ClientRecord };
+  return json.client;
 }
 
-export function addClient(client: Omit<ClientRecord, 'id'>): ClientRecord {
-  const newClient: ClientRecord = { ...client, id: Date.now().toString() };
-  const clients = getClients();
-  saveClients([...clients, newClient]);
-  return newClient;
+export async function updateClient(id: string, updates: Partial<Omit<ClientRecord, 'id'>>): Promise<void> {
+  await fetch(`/api/clients/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
 }
 
-export function updateClient(id: string, updates: Partial<Omit<ClientRecord, 'id'>>): void {
-  const clients = getClients();
-  saveClients(clients.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+export async function deleteClient(id: string): Promise<void> {
+  await fetch(`/api/clients/${id}`, { method: 'DELETE' });
 }
 
-export function deleteClient(id: string): void {
-  saveClients(getClients().filter((c) => c.id !== id));
+export async function getClientById(id: string): Promise<ClientRecord | null> {
+  const res = await fetch(`/api/clients/${id}`);
+  if (!res.ok) return null;
+  const json = await res.json() as { client: ClientRecord };
+  return json.client ?? null;
 }
 
-export function getClientById(id: string): ClientRecord | null {
-  return getClients().find((c) => c.id === id) ?? null;
-}
-
-export function getClientByEmail(email: string): ClientRecord | null {
-  return getClients().find((c) => c.email.toLowerCase() === email.toLowerCase()) ?? null;
+export async function getClientByEmail(email: string): Promise<ClientRecord | null> {
+  const clients = await getClients();
+  return clients.find((c) => c.email.toLowerCase() === email.toLowerCase()) ?? null;
 }
 
 // ---------------------------------------------------------------------------
 // Product resolution for a client
 // ---------------------------------------------------------------------------
 
-export function getProductsForClient(email: string): ProductCategory[] {
-  const client = getClientByEmail(email);
+export async function getProductsForClient(email: string): Promise<ProductCategory[]> {
+  const client = await getClientByEmail(email);
   if (!client) return PRODUCTS;
 
   return PRODUCTS.filter((p) => client.enabledProducts.includes(p.id)).map((p) => ({

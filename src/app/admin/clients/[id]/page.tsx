@@ -24,26 +24,29 @@ export default function ClientEditPage({ params }: PageProps) {
   const [emailError, setEmailError] = useState('');
 
   useEffect(() => {
-    const c = getClientById(id);
-    if (!c) {
-      router.replace('/admin/clients');
-      return;
+    async function load() {
+      const c = await getClientById(id);
+      if (!c) {
+        router.replace('/admin/clients');
+        return;
+      }
+      setClient(c);
+      setForm({ name: c.name, email: c.email, password: c.password, company: c.company });
+      setEnabledProducts([...c.enabledProducts]);
+      setCustomPricing(JSON.parse(JSON.stringify(c.customPricing)));
     }
-    setClient(c);
-    setForm({ name: c.name, email: c.email, password: c.password, company: c.company });
-    setEnabledProducts([...c.enabledProducts]);
-    setCustomPricing(JSON.parse(JSON.stringify(c.customPricing)));
+    load();
   }, [id, router]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!client) return;
     setEmailError('');
-    const others = getClients().filter((c) => c.id !== id);
+    const others = (await getClients()).filter((c) => c.id !== id);
     if (others.some((c) => c.email.toLowerCase() === form.email.toLowerCase())) {
       setEmailError('Another client already uses this email.');
       return;
     }
-    updateClient(id, { ...form, enabledProducts, customPricing });
+    await updateClient(id, { ...form, enabledProducts, customPricing });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };

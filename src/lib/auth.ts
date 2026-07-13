@@ -1,4 +1,4 @@
-import { getClients } from './admin';
+const AUTH_KEY = 'sidekick_user';
 
 export interface User {
   email: string;
@@ -6,18 +6,19 @@ export interface User {
   name: string;
 }
 
-const AUTH_KEY = 'sidekick_user';
-
-export function login(email: string, password: string): User | null {
-  const client = getClients().find(
-    (c) => c.email.toLowerCase() === email.toLowerCase() && c.password === password
-  );
-  if (!client) return null;
-  const userData: User = { email: client.email, company: client.company, name: client.name };
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(AUTH_KEY, JSON.stringify(userData));
+export async function login(email: string, password: string): Promise<User | null> {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) return null;
+  const json = await res.json() as { user: User | null };
+  const user = json.user ?? null;
+  if (user && typeof window !== 'undefined') {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(user));
   }
-  return userData;
+  return user;
 }
 
 export function logout(): void {

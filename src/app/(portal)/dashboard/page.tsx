@@ -12,9 +12,15 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<ProductCategory[]>([]);
 
   useEffect(() => {
-    const u = getUser();
-    setUser(u);
-    if (u) setProducts(getProductsForClient(u.email));
+    async function load() {
+      const u = getUser();
+      setUser(u);
+      if (u) {
+        const prods = await getProductsForClient(u.email);
+        setProducts(prods);
+      }
+    }
+    load();
   }, []);
 
   return (

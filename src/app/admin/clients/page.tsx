@@ -22,29 +22,29 @@ export default function ClientsPage() {
   });
   const [formError, setFormError] = useState('');
 
-  const refresh = () => setClients(getClients());
+  const refresh = async () => setClients(await getClients());
 
   useEffect(() => {
     refresh();
   }, []);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
-    const existing = getClients();
+    const existing = await getClients();
     if (existing.some((c) => c.email.toLowerCase() === form.email.toLowerCase())) {
       setFormError('A client with this email already exists.');
       return;
     }
-    addClient({ ...form, customPricing: {} });
-    refresh();
+    await addClient({ ...form, customPricing: {} });
+    await refresh();
     setShowAdd(false);
     setForm({ name: '', email: '', password: '', company: '', enabledProducts: [...ALL_PRODUCT_IDS] });
   };
 
-  const handleDelete = (id: string) => {
-    deleteClient(id);
-    refresh();
+  const handleDelete = async (id: string) => {
+    await deleteClient(id);
+    await refresh();
     setDeleteConfirmId(null);
   };
 

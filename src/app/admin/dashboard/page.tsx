@@ -9,7 +9,11 @@ export default function AdminDashboard() {
   const [clientCount, setClientCount] = useState(0);
 
   useEffect(() => {
-    setClientCount(getClients().length);
+    async function load() {
+      const clients = await getClients();
+      setClientCount(clients.length);
+    }
+    load();
   }, []);
 
   const totalProofs = PRODUCTS.reduce((sum, p) => sum + p.proofs.length, 0);

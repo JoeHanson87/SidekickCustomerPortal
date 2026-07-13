@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/auth';
-import { getClients } from '@/lib/admin';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,17 +14,26 @@ export default function LoginPage() {
   const [demoAccounts, setDemoAccounts] = useState<{ email: string; password: string; company: string }[]>([]);
 
   useEffect(() => {
-    setDemoAccounts(
-      getClients().map(({ email, password, company }) => ({ email, password, company }))
-    );
+    async function loadDemos() {
+      try {
+        const res = await fetch('/api/clients');
+        if (!res.ok) return;
+        const json = await res.json() as { clients: { email: string; password: string; company: string }[] };
+        setDemoAccounts(
+          (json.clients ?? []).map(({ email, password, company }) => ({ email, password, company }))
+        );
+      } catch {
+        // ignore — demo list is cosmetic
+      }
+    }
+    loadDemos();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    const user = login(email, password);
+    const user = await login(email, password);
     if (user) {
       router.push('/dashboard');
     } else {
