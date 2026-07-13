@@ -61,6 +61,12 @@ export default function ClientEditPage({ params }: PageProps) {
     );
   };
 
+  const toggleProof = (proofId: string) => {
+    setClientProofIds((prev) =>
+      prev.includes(proofId) ? prev.filter((pid) => pid !== proofId) : [...prev, proofId]
+    );
+  };
+
   const getEffectiveTiers = (proofId: string): PriceTier[] => {
     if (customPricing[proofId]) return customPricing[proofId];
     const proof = PRODUCTS.flatMap((p) => p.proofs).find((pr) => pr.id === proofId);
