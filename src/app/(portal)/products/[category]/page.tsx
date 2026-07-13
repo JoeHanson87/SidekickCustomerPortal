@@ -8,7 +8,7 @@ import { getUser } from '@/lib/auth';
 import { useCart } from '@/context/CartContext';
 import type { Proof, ProductCategory } from '@/lib/products';
 import type { User } from '@/lib/auth';
-import type { ProofImageRecord } from '@/app/api/proof-images/route';
+import type { ClientSpecificProofImageRecord } from '@/app/api/client-specific-proof-images/route';
 import ProofImage from '@/components/ProofImage';
 import ChangesModal from '@/components/ChangesModal';
 
@@ -27,7 +27,7 @@ export default function ProductPage({ params }: PageProps) {
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [showChangesModal, setShowChangesModal] = useState(false);
   const [addedToBasket, setAddedToBasket] = useState(false);
-  const [proofImages, setProofImages] = useState<ProofImageRecord[]>([]);
+  const [proofImages, setProofImages] = useState<ClientSpecificProofImageRecord[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -45,12 +45,11 @@ export default function ProductPage({ params }: PageProps) {
   useEffect(() => {
     async function loadImages() {
       try {
-        const url = user && user.id
-          ? `/api/proof-images?categoryId=${category}&clientId=${user.id}`
-          : `/api/proof-images?categoryId=${category}`;
+        if (!user || !user.id) return;
+        const url = `/api/client-specific-proof-images?clientId=${user.id}&categoryId=${category}`;
         const res = await fetch(url);
         if (!res.ok) return;
-        const json = await res.json() as { images: ProofImageRecord[] };
+        const json = await res.json() as { images: ClientSpecificProofImageRecord[] };
         setProofImages(json.images ?? []);
       } catch {
         // ignore — images are optional
