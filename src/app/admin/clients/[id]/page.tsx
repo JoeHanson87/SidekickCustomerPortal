@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getClientById, updateClient, getClients } from '@/lib/admin';
+import { getClientById, updateClient, getClients, getClientProofs, updateClientProofs } from '@/lib/admin';
 import PRODUCTS from '@/lib/products';
 import type { ClientRecord, PriceTier } from '@/lib/admin';
 
@@ -19,6 +19,7 @@ export default function ClientEditPage({ params }: PageProps) {
   const [form, setForm] = useState({ name: '', email: '', password: '', company: '' });
   const [enabledProducts, setEnabledProducts] = useState<string[]>([]);
   const [customPricing, setCustomPricing] = useState<Record<string, PriceTier[]>>({});
+  const [clientProofIds, setClientProofIds] = useState<string[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -34,6 +35,8 @@ export default function ClientEditPage({ params }: PageProps) {
       setForm({ name: c.name, email: c.email, password: c.password, company: c.company });
       setEnabledProducts([...c.enabledProducts]);
       setCustomPricing(JSON.parse(JSON.stringify(c.customPricing)));
+      const proofIds = await getClientProofs(c.id);
+      setClientProofIds(proofIds);
     }
     load();
   }, [id, router]);
@@ -47,6 +50,7 @@ export default function ClientEditPage({ params }: PageProps) {
       return;
     }
     await updateClient(id, { ...form, enabledProducts, customPricing });
+    await updateClientProofs(id, clientProofIds);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -336,6 +340,49 @@ export default function ClientEditPage({ params }: PageProps) {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </section>
+
+        {/* Proof access */}
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="text-lg font-bold text-brand-dark mb-1">Proof access</h2>
+          <p className="text-sm text-gray-500 mb-5">
+            Select which individual proofs this client can see and order.
+          </p>
+
+          {enabledProducts.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">
+              No products enabled. Enable products above to configure proof access.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {PRODUCTS.filter((p) => enabledProducts.includes(p.id)).map((p) => (
+                <div key={p.id}>
+                  <h3 className="text-sm font-semibold text-brand-dark mb-3">{p.name}</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {p.proofs.map((proof) => (
+                      <label
+                        key={proof.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-brand-accent/40 cursor-pointer transition group"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={clientProofIds.includes(proof.id)}
+                          onChange={() => toggleProof(proof.id)}
+                          className="accent-brand-accent w-4 h-4 shrink-0"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-brand-dark group-hover:text-brand-accent transition">
+                            {proof.name}
+                          </p>
+                          <p className="text-xs text-gray-400">{proof.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>
