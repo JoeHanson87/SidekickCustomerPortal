@@ -3,10 +3,10 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import PRODUCTS from '@/lib/products';
+import { getProductsForClient } from '@/lib/admin';
 import { getUser } from '@/lib/auth';
 import { useCart } from '@/context/CartContext';
-import type { Proof } from '@/lib/products';
+import type { Proof, ProductCategory } from '@/lib/products';
 import type { User } from '@/lib/auth';
 import ProofImage from '@/components/ProofImage';
 import ChangesModal from '@/components/ChangesModal';
@@ -21,16 +21,19 @@ export default function ProductPage({ params }: PageProps) {
   const { addItem } = useCart();
 
   const [user, setUser] = useState<User | null>(null);
+  const [products, setProducts] = useState<ProductCategory[]>([]);
   const [activeProof, setActiveProof] = useState<Proof | null>(null);
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [showChangesModal, setShowChangesModal] = useState(false);
   const [addedToBasket, setAddedToBasket] = useState(false);
 
-  const product = PRODUCTS.find((p) => p.id === category);
-
   useEffect(() => {
-    setUser(getUser());
+    const u = getUser();
+    setUser(u);
+    if (u) setProducts(getProductsForClient(u.email));
   }, []);
+
+  const product = products.find((p) => p.id === category);
 
   useEffect(() => {
     if (product && product.proofs.length > 0) {

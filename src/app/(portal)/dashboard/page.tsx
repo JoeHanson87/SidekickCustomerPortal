@@ -3,14 +3,18 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getUser } from '@/lib/auth';
-import PRODUCTS from '@/lib/products';
+import { getProductsForClient } from '@/lib/admin';
 import type { User } from '@/lib/auth';
+import type { ProductCategory } from '@/lib/products';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [products, setProducts] = useState<ProductCategory[]>([]);
 
   useEffect(() => {
-    setUser(getUser());
+    const u = getUser();
+    setUser(u);
+    if (u) setProducts(getProductsForClient(u.email));
   }, []);
 
   return (
@@ -27,7 +31,7 @@ export default function DashboardPage() {
 
       {/* Product tile grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {PRODUCTS.map((product) => (
+        {products.map((product) => (
           <Link
             key={product.id}
             href={`/products/${product.id}`}
