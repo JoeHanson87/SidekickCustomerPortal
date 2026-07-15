@@ -15,10 +15,9 @@ export default function AdminNav() {
 
   return (
     <header className="bg-brand-dark text-white sticky top-0 z-40 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-24">
         <div className="flex items-center gap-3">
           <SidekickLogo />
-          <span className="font-bold text-white tracking-wide text-lg">Sidekick</span>
           <span className="text-white/40 text-sm hidden sm:block">Admin Portal</span>
         </div>
 
@@ -66,7 +65,7 @@ function NavLink({
 
 function SidekickLogo() {
   return (
-    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect width="32" height="32" rx="8" fill="#E8A020" />
       <path
         d="M8 20c0-4.418 3.582-8 8-8s8 3.582 8 8"
