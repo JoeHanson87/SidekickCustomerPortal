@@ -132,8 +132,8 @@ function SidekickLogo() {
     <Image
       src="/sidekick-logo.png"
       alt="Sidekick Logo"
-      width={48}
-      height={48}
+      width={144}
+      height={144}
       priority
       className="object-contain"
     />
