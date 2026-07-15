@@ -26,11 +26,10 @@ export default function Nav() {
 
   return (
     <header className="bg-brand-dark text-white sticky top-0 z-40 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-24">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-3 group">
           <SidekickLogo />
-          <span className="font-bold text-white tracking-wide text-lg">Sidekick</span>
           <span className="text-white/40 text-sm hidden sm:block">Partner Portal</span>
         </Link>
 
@@ -133,8 +132,8 @@ function SidekickLogo() {
     <Image
       src="/sidekick-logo.png"
       alt="Sidekick Logo"
-      width={28}
-      height={28}
+      width={48}
+      height={48}
       priority
       className="object-contain"
     />
