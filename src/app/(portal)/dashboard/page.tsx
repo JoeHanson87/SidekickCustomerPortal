@@ -143,5 +143,13 @@ function ProductIcon({ id }: { id: string }) {
       </svg>
     ),
   };
-  return <>{icons[id] ?? icons.stationery}</>;
+  return <>{icons[id] ?? <DefaultProductIcon />}</>;
+}
+
+function DefaultProductIcon() {
+  return (
+    <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
+    </svg>
+  );
 }
