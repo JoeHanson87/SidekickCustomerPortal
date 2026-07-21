@@ -13,8 +13,9 @@ import {
   uploadClientProofImage,
   deleteClientProofImage,
 } from '@/lib/admin';
-import PRODUCTS from '@/lib/products';
+import { getProducts } from '@/lib/products';
 import type { ClientRecord, PriceTier } from '@/lib/admin';
+import type { ProductCategory } from '@/lib/products';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -32,6 +33,7 @@ export default function ClientEditPage({ params }: PageProps) {
   const router = useRouter();
 
   const [client, setClient] = useState<ClientRecord | null>(null);
+  const [products, setProducts] = useState<ProductCategory[]>([]);
   const [form, setForm] = useState({ name: '', email: '', password: '', company: '' });
   const [enabledProducts, setEnabledProducts] = useState<string[]>([]);
   const [customPricing, setCustomPricing] = useState<Record<string, PriceTier[]>>({});
@@ -45,11 +47,12 @@ export default function ClientEditPage({ params }: PageProps) {
 
   useEffect(() => {
     async function load() {
-      const c = await getClientById(id);
+      const [c, loadedProducts] = await Promise.all([getClientById(id), getProducts()]);
       if (!c) {
         router.replace('/admin/clients');
         return;
       }
+      setProducts(loadedProducts);
       setClient(c);
       setForm({ name: c.name, email: c.email, password: c.password, company: c.company });
       setEnabledProducts([...c.enabledProducts]);
@@ -124,7 +127,7 @@ export default function ClientEditPage({ params }: PageProps) {
 
   const getEffectiveTiers = (proofId: string): PriceTier[] => {
     if (customPricing[proofId]) return customPricing[proofId];
-    const proof = PRODUCTS.flatMap((p) => p.proofs).find((pr) => pr.id === proofId);
+    const proof = products.flatMap((p) => p.proofs).find((pr) => pr.id === proofId);
     return proof?.priceTiers.map((t) => ({ ...t })) ?? [];
   };
 
@@ -246,7 +249,7 @@ export default function ClientEditPage({ params }: PageProps) {
             Choose which product categories this client can see and order from.
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
-            {PRODUCTS.map((p) => (
+            {products.map((p) => (
               <label
                 key={p.id}
                 className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-brand-accent/40 cursor-pointer transition group"
@@ -282,7 +285,7 @@ export default function ClientEditPage({ params }: PageProps) {
             </p>
           ) : (
             <div className="space-y-3">
-              {PRODUCTS.filter((p) => enabledProducts.includes(p.id)).map((p) => {
+              {products.filter((p) => enabledProducts.includes(p.id)).map((p) => {
                 const hasCustom = p.proofs.some((pr) => !!customPricing[pr.id]);
                 const isExpanded = expandedCategory === p.id;
 
@@ -418,7 +421,7 @@ export default function ClientEditPage({ params }: PageProps) {
             </p>
           ) : (
             <div className="space-y-4">
-              {PRODUCTS.filter((p) => enabledProducts.includes(p.id)).map((p) => (
+              {products.filter((p) => enabledProducts.includes(p.id)).map((p) => (
                 <div key={p.id}>
                   <h3 className="text-sm font-semibold text-brand-dark mb-3">{p.name}</h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -461,7 +464,7 @@ export default function ClientEditPage({ params }: PageProps) {
             </p>
           ) : (
             <div className="space-y-6">
-              {PRODUCTS.filter((p) => enabledProducts.includes(p.id)).map((product) => (
+              {products.filter((p) => enabledProducts.includes(p.id)).map((product) => (
                 <div key={product.id}>
                   <h3 className="text-sm font-semibold text-brand-dark mb-3">{product.name}</h3>
                   <div className="space-y-3">
