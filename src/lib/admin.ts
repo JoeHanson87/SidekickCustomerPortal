@@ -1,4 +1,4 @@
-import PRODUCTS from './products';
+import { getProducts } from './products';
 import type { ProductCategory, PriceTier } from './products';
 
 export type { PriceTier };
@@ -185,12 +185,13 @@ export async function deleteClientProofImage(id: string): Promise<void> {
 
 export async function getProductsForClient(email: string): Promise<ProductCategory[]> {
   const client = await getClientByEmail(email);
-  if (!client) return PRODUCTS;
+  const products = await getProducts();
+  if (!client) return products;
 
   // Get the client's allowed proofs
   const allowedProofIds = await getClientProofs(client.id);
 
-  return PRODUCTS.filter((p) => client.enabledProducts.includes(p.id)).map((p) => ({
+  return products.filter((p) => client.enabledProducts.includes(p.id)).map((p) => ({
     ...p,
     proofs: p.proofs
       .filter((proof) => allowedProofIds.length === 0 || allowedProofIds.includes(proof.id))
