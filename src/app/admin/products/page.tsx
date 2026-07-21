@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   getProducts,
   addProduct,
   updateProduct,
   deleteProduct,
 } from '@/lib/products';
-import type { ProductCategory, Proof, PriceTier } from '@/lib/products';
+import type { ProductCategory, Proof } from '@/lib/products';
 
 const EMPTY_PRODUCT: ProductCategory = {
   id: '',
@@ -48,15 +48,27 @@ export default function AdminProductsPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true);
     const data = await getProducts();
     setProducts(data);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
-    refresh();
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      const data = await getProducts();
+      if (!cancelled) {
+        setProducts(data);
+        setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleAdd = () => {
