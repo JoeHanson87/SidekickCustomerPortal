@@ -3,20 +3,22 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getClients } from '@/lib/admin';
-import PRODUCTS from '@/lib/products';
+import { getProducts } from '@/lib/products';
 
 export default function AdminDashboard() {
   const [clientCount, setClientCount] = useState(0);
+  const [productCount, setProductCount] = useState(0);
+  const [totalProofs, setTotalProofs] = useState(0);
 
   useEffect(() => {
     async function load() {
-      const clients = await getClients();
+      const [clients, products] = await Promise.all([getClients(), getProducts()]);
       setClientCount(clients.length);
+      setProductCount(products.length);
+      setTotalProofs(products.reduce((sum, p) => sum + p.proofs.length, 0));
     }
     load();
   }, []);
-
-  const totalProofs = PRODUCTS.reduce((sum, p) => sum + p.proofs.length, 0);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
@@ -37,7 +39,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           label="Product Categories"
-          value={PRODUCTS.length}
+          value={productCount}
           description="Available product types"
           colorClass="bg-amber-500"
           icon={<ProductsIcon />}

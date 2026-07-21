@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getClients, addClient, deleteClient } from '@/lib/admin';
-import PRODUCTS from '@/lib/products';
+import { getProducts } from '@/lib/products';
 import type { ClientRecord } from '@/lib/admin';
-
-const ALL_PRODUCT_IDS = PRODUCTS.map((p) => p.id);
+import type { ProductCategory } from '@/lib/products';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<ClientRecord[]>([]);
+  const [products, setProducts] = useState<ProductCategory[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -18,14 +18,26 @@ export default function ClientsPage() {
     email: '',
     password: '',
     company: '',
-    enabledProducts: [...ALL_PRODUCT_IDS],
+    enabledProducts: [] as string[],
   });
   const [formError, setFormError] = useState('');
 
   const refresh = async () => setClients(await getClients());
 
   useEffect(() => {
-    refresh();
+    async function load() {
+      const [loadedClients, loadedProducts] = await Promise.all([
+        getClients(),
+        getProducts(),
+      ]);
+      setClients(loadedClients);
+      setProducts(loadedProducts);
+      setForm((prev) => ({
+        ...prev,
+        enabledProducts: loadedProducts.map((p) => p.id),
+      }));
+    }
+    load();
   }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -39,7 +51,7 @@ export default function ClientsPage() {
     await addClient({ ...form, customPricing: {} });
     await refresh();
     setShowAdd(false);
-    setForm({ name: '', email: '', password: '', company: '', enabledProducts: [...ALL_PRODUCT_IDS] });
+    setForm({ name: '', email: '', password: '', company: '', enabledProducts: products.map((p) => p.id) });
   };
 
   const handleDelete = async (id: string) => {
@@ -103,7 +115,7 @@ export default function ClientsPage() {
                     <td className="px-6 py-4 text-gray-500">{client.email}</td>
                     <td className="px-6 py-4 text-center">
                       <span className="inline-block bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-full px-2.5 py-0.5">
-                        {client.enabledProducts.length} / {PRODUCTS.length}
+                        {client.enabledProducts.length} / {products.length}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -225,7 +237,7 @@ export default function ClientsPage() {
                   Enabled products
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {PRODUCTS.map((p) => (
+                  {products.map((p) => (
                     <label
                       key={p.id}
                       className="flex items-center gap-2 text-sm cursor-pointer py-1"
