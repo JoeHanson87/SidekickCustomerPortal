@@ -311,3 +311,8 @@ function CategoryEmoji({ id }: { id: string }) {
   };
   return <span>{map[id] ?? '📦'}</span>;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _DefaultCategoryEmoji() {
+  return <span>📦</span>;
+}
