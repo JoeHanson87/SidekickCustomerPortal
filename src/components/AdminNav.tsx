@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import SidekickLogo from '@/components/SidekickLogo';
 import { useRouter, usePathname } from 'next/navigation';
 import { logoutAdmin } from '@/lib/admin';
 
@@ -63,17 +64,3 @@ function NavLink({
   );
 }
 
-function SidekickLogo() {
-  return (
-    <svg width="144" height="144" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="8" fill="#E8A020" />
-      <path
-        d="M8 20c0-4.418 3.582-8 8-8s8 3.582 8 8"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <circle cx="16" cy="13" r="3" fill="white" />
-    </svg>
-  );
-}

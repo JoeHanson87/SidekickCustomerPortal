@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import SidekickLogo from '@/components/SidekickLogo';
 import { useRouter, usePathname } from 'next/navigation';
 import { logout, getUser } from '@/lib/auth';
 import { useCart } from '@/context/CartContext';
@@ -124,19 +124,6 @@ function NavLink({ href, active, children }: { href: string; active: boolean; ch
     >
       {children}
     </Link>
-  );
-}
-
-function SidekickLogo() {
-  return (
-    <Image
-      src="/sidekick-logo.png"
-      alt="Sidekick Logo"
-      width={144}
-      height={144}
-      priority
-      className="object-contain"
-    />
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import SidekickLogo from '@/components/SidekickLogo';
 import { loginAsAdmin } from '@/lib/admin';
 
 export default function AdminLoginPage() {
@@ -30,7 +31,7 @@ export default function AdminLoginPage() {
       {/* Header */}
       <header className="bg-brand-dark px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <SidekickLogo />
+          <SidekickLogo width={32} height={32} />
           <span className="text-white text-sm font-medium tracking-wide opacity-70">
             Admin Portal
           </span>
@@ -120,17 +121,3 @@ export default function AdminLoginPage() {
   );
 }
 
-function SidekickLogo() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="8" fill="#E8A020" />
-      <path
-        d="M8 20c0-4.418 3.582-8 8-8s8 3.582 8 8"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <circle cx="16" cy="13" r="3" fill="white" />
-    </svg>
-  );
-}
