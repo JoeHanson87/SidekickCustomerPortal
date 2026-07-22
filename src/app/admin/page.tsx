@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
       {/* Header */}
       <header className="bg-brand-dark px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <SidekickLogo width={32} height={32} />
+          <SidekickLogo />
           <span className="text-white text-sm font-medium tracking-wide opacity-70">
             Admin Portal
           </span>
