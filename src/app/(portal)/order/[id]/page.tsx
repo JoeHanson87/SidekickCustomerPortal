@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import SidekickLogo from '@/components/SidekickLogo';
 import type { CartItem } from '@/context/CartContext';
 
 interface OrderData {
@@ -92,7 +93,7 @@ export default function OrderPage({ params }: PageProps) {
         {/* Invoice header */}
         <div className="bg-brand-dark p-6 flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <SidekickLogo />
+            <SidekickLogo width={36} height={36} />
             <div>
               <p className="text-white font-bold text-lg">Sidekick Ltd</p>
               <p className="text-white/50 text-xs">hello@sidekickltd.com · sidekickltd.com</p>
@@ -231,12 +232,3 @@ export default function OrderPage({ params }: PageProps) {
   );
 }
 
-function SidekickLogo() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="8" fill="#E8A020" />
-      <path d="M8 20c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="16" cy="13" r="3" fill="white" />
-    </svg>
-  );
-}
