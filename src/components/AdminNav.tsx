@@ -26,6 +26,9 @@ export default function AdminNav() {
           <NavLink href="/admin/dashboard" active={pathname === '/admin/dashboard'}>
             Dashboard
           </NavLink>
+          <NavLink href="/admin/orders" active={pathname.startsWith('/admin/orders')}>
+            Orders
+          </NavLink>
           <NavLink href="/admin/clients" active={pathname.startsWith('/admin/clients')}>
             Clients
           </NavLink>
