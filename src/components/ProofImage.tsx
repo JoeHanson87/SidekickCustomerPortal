@@ -5,6 +5,19 @@ interface ProofImageProps {
   imageUrl?: string;
 }
 
+function isPdfUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  if (lower.endsWith('.pdf')) return true;
+  try {
+    const parsed = new URL(url);
+    const format = parsed.searchParams.get('format');
+    if (format?.toLowerCase() === 'pdf') return true;
+  } catch {
+    // ignore invalid URLs
+  }
+  return false;
+}
+
 const PROOF_CONFIGS: Record<string, { bg: string; accent: string; shape: string }> = {
   'stationery': { bg: '#4F46E5', accent: '#818CF8', shape: 'card' },
   'brochures': { bg: '#0284C7', accent: '#38BDF8', shape: 'brochure' },
@@ -17,6 +30,30 @@ export default function ProofImage({ productName, company, categoryId, imageUrl 
   const cfg = PROOF_CONFIGS[categoryId] ?? { bg: '#374151', accent: '#9CA3AF', shape: 'card' };
 
   if (imageUrl) {
+    if (isPdfUrl(imageUrl)) {
+      return (
+        <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-50 border border-gray-200 shadow-sm">
+          <iframe
+            src={imageUrl}
+            title={`Proof PDF for ${productName}`}
+            className="w-full h-full"
+          >
+            <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 p-4">
+              <p className="text-sm mb-2">Your browser cannot display this PDF.</p>
+              <a
+                href={imageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand-accent hover:underline text-sm"
+              >
+                Open PDF in a new tab
+              </a>
+            </div>
+          </iframe>
+        </div>
+      );
+    }
+
     return (
       <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-50 border border-gray-200 shadow-sm">
         {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -28,6 +28,19 @@ interface ClientSpecificImage {
   imageUrl: string;
 }
 
+function isPdfUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  if (lower.endsWith('.pdf')) return true;
+  try {
+    const parsed = new URL(url);
+    const format = parsed.searchParams.get('format');
+    if (format?.toLowerCase() === 'pdf') return true;
+  } catch {
+    // ignore invalid URLs
+  }
+  return false;
+}
+
 export default function ClientEditPage({ params }: PageProps) {
   const { id } = use(params);
   const router = useRouter();
@@ -453,14 +466,14 @@ export default function ClientEditPage({ params }: PageProps) {
 
         {/* Proof images - Client specific uploads */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="text-lg font-bold text-brand-dark mb-1">Proof images</h2>
+          <h2 className="text-lg font-bold text-brand-dark mb-1">Proof files</h2>
           <p className="text-sm text-gray-500 mb-5">
-            Upload proof images specific to this client. These images will be shown exclusively to this client.
+            Upload proof files specific to this client. These files will be shown exclusively to this client.
           </p>
 
           {enabledProducts.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4">
-              No products enabled. Enable products above to upload proof images.
+              No products enabled. Enable products above to upload proof files.
             </p>
           ) : (
             <div className="space-y-6">
@@ -479,20 +492,31 @@ export default function ClientEditPage({ params }: PageProps) {
                           key={proof.id}
                           className="flex items-start gap-4 p-4 rounded-lg border border-gray-100 hover:border-brand-accent/20 transition"
                         >
-                          {/* Image preview */}
+                          {/* File preview */}
                           <div className="shrink-0">
                             {image ? (
-                              <div className="relative w-24 h-20 rounded-lg overflow-hidden border border-gray-200">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={image.imageUrl}
-                                  alt={`Proof image for ${proof.name}`}
-                                  className="w-full h-full object-contain bg-gray-50"
-                                />
-                              </div>
+                              isPdfUrl(image.imageUrl) ? (
+                                <div className="relative w-24 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex flex-col items-center justify-center">
+                                  <svg className="w-8 h-8 text-red-500 mb-1" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" opacity="0.3" />
+                                    <path d="M14 2v6h6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                                    <path d="M14.5 11.5h-9M14.5 15.5h-9M11.5 19.5h-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                                  </svg>
+                                  <span className="text-[10px] font-medium text-gray-600">PDF</span>
+                                </div>
+                              ) : (
+                                <div className="relative w-24 h-20 rounded-lg overflow-hidden border border-gray-200">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={image.imageUrl}
+                                    alt={`Proof image for ${proof.name}`}
+                                    className="w-full h-full object-contain bg-gray-50"
+                                  />
+                                </div>
+                              )
                             ) : (
                               <div className="w-24 h-20 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
-                                <span className="text-xs text-gray-400 text-center px-1">No image</span>
+                                <span className="text-xs text-gray-400 text-center px-1">No file</span>
                               </div>
                             )}
                           </div>
@@ -558,7 +582,7 @@ function ClientImageUploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.pdf,application/pdf"
         className="hidden"
         onChange={handleChange}
       />
