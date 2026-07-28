@@ -61,6 +61,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+    return NextResponse.json(
+      { error: 'Only images and PDF files are allowed' },
+      { status: 400 }
+    );
+  }
+
   const supabase = createSupabaseServer();
 
   // Upload file to Supabase Storage
