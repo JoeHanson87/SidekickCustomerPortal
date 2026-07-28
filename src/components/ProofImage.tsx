@@ -7,13 +7,16 @@ interface ProofImageProps {
 
 function isPdfUrl(url: string): boolean {
   const lower = url.toLowerCase();
-  if (lower.endsWith('.pdf')) return true;
+  // Detect URLs where the path ends with .pdf, even if followed by query params or fragments.
   try {
     const parsed = new URL(url);
+    if (parsed.pathname.toLowerCase().endsWith('.pdf')) return true;
     const format = parsed.searchParams.get('format');
     if (format?.toLowerCase() === 'pdf') return true;
   } catch {
-    // ignore invalid URLs
+    // Fallback for relative/invalid URLs: look for .pdf before any query/fragment.
+    const clean = lower.split('?')[0].split('#')[0];
+    if (clean.endsWith('.pdf')) return true;
   }
   return false;
 }
@@ -33,8 +36,9 @@ export default function ProofImage({ productName, company, categoryId, imageUrl 
     if (isPdfUrl(imageUrl)) {
       return (
         <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-50 border border-gray-200 shadow-sm">
-          <iframe
-            src={imageUrl}
+          <object
+            data={imageUrl}
+            type="application/pdf"
             title={`Proof PDF for ${productName}`}
             className="w-full h-full"
           >
@@ -49,7 +53,7 @@ export default function ProofImage({ productName, company, categoryId, imageUrl 
                 Open PDF in a new tab
               </a>
             </div>
-          </iframe>
+          </object>
         </div>
       );
     }
