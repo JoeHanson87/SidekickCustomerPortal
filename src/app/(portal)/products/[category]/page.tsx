@@ -23,6 +23,7 @@ export default function ProductPage({ params }: PageProps) {
 
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<ProductCategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeProof, setActiveProof] = useState<Proof | null>(null);
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [showChangesModal, setShowChangesModal] = useState(false);
@@ -37,6 +38,7 @@ export default function ProductPage({ params }: PageProps) {
         const prods = await getProductsForClient(u.email);
         setProducts(prods);
       }
+      setLoading(false);
     }
     load();
   }, []);
@@ -89,6 +91,14 @@ export default function ProductPage({ params }: PageProps) {
     setAddedToBasket(true);
     setTimeout(() => setAddedToBasket(false), 3000);
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-20 text-center">
+        <p className="text-gray-500">Loading product…</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
