@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { getUser } from '@/lib/auth';
 import type { User } from '@/lib/auth';
+import { createOrder } from '@/lib/admin';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -45,22 +46,34 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1200));
 
-    const orderId = `SK-${Date.now().toString(36).toUpperCase()}`;
-    const orderData = {
-      id: orderId,
-      date: new Date().toISOString(),
-      items,
-      subtotal,
-      vat,
-      grandTotal,
-      ...form,
-    };
-    sessionStorage.setItem(`order_${orderId}`, JSON.stringify(orderData));
-    clearCart();
-    router.push(`/order/${orderId}`);
+    try {
+      const result = await createOrder({
+        clientId: user.id,
+        contactName: form.contactName,
+        contactEmail: form.contactEmail,
+        company: form.company,
+        phone: form.phone,
+        poNumber: form.poNumber,
+        deliveryLine1: form.deliveryLine1,
+        deliveryLine2: form.deliveryLine2,
+        deliveryCity: form.deliveryCity,
+        deliveryPostcode: form.deliveryPostcode,
+        notes: form.notes,
+        subtotal,
+        vat,
+        grandTotal,
+        items,
+      });
+
+      clearCart();
+      router.push(`/order/${result.id}`);
+    } catch {
+      setSubmitting(false);
+      alert('Failed to place order. Please try again.');
+    }
   };
 
   if (items.length === 0) {

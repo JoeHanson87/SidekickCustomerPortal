@@ -201,3 +201,100 @@ export async function getProductsForClient(email: string): Promise<ProductCatego
       })),
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+export interface OrderRecord {
+  id: string;
+  clientId: string;
+  contactName: string;
+  contactEmail: string;
+  company: string;
+  phone: string;
+  poNumber: string;
+  deliveryLine1: string;
+  deliveryLine2: string;
+  deliveryCity: string;
+  deliveryPostcode: string;
+  notes: string;
+  subtotal: number;
+  vat: number;
+  grandTotal: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItemRecord[];
+}
+
+export interface OrderItemRecord {
+  id: number;
+  orderId: string;
+  categoryId: string;
+  categoryName: string;
+  proofId: string;
+  proofName: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface CreateOrderInput {
+  clientId: string;
+  contactName: string;
+  contactEmail: string;
+  company: string;
+  phone?: string;
+  poNumber?: string;
+  deliveryLine1: string;
+  deliveryLine2?: string;
+  deliveryCity: string;
+  deliveryPostcode: string;
+  notes?: string;
+  subtotal: number;
+  vat: number;
+  grandTotal: number;
+  items: Array<{
+    id: string;
+    categoryId: string;
+    categoryName: string;
+    proofId: string;
+    proofName: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }>;
+}
+
+export async function getOrders(): Promise<OrderRecord[]> {
+  const res = await fetch('/api/orders');
+  if (!res.ok) return [];
+  const json = await res.json() as { orders: OrderRecord[] };
+  return json.orders ?? [];
+}
+
+export async function getOrderById(id: string): Promise<OrderRecord | null> {
+  const res = await fetch(`/api/orders/${id}`);
+  if (!res.ok) return null;
+  const json = await res.json() as { order: OrderRecord };
+  return json.order ?? null;
+}
+
+export async function createOrder(input: CreateOrderInput): Promise<{ id: string; createdAt: string }> {
+  const res = await fetch('/api/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const json = await res.json() as { order: { id: string; createdAt: string } };
+  return json.order;
+}
+
+export async function updateOrderStatus(id: string, status: string): Promise<void> {
+  await fetch(`/api/orders/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+}

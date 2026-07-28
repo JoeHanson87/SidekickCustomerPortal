@@ -3,12 +3,13 @@
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import SidekickLogo from '@/components/SidekickLogo';
-import type { CartItem } from '@/context/CartContext';
+import { getOrderById } from '@/lib/admin';
+import type { OrderItemRecord } from '@/lib/admin';
 
 interface OrderData {
   id: string;
   date: string;
-  items: CartItem[];
+  items: OrderItemRecord[];
   subtotal: number;
   vat: number;
   grandTotal: number;
@@ -34,16 +35,41 @@ export default function OrderPage({ params }: PageProps) {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(`order_${id}`);
-    if (raw) {
-      try {
-        setOrder(JSON.parse(raw) as OrderData);
-      } catch {
-        setNotFound(true);
+    async function load() {
+      const record = await getOrderById(id);
+      if (record) {
+        setOrder({
+          id: record.id,
+          date: record.createdAt,
+          items: record.items,
+          subtotal: record.subtotal,
+          vat: record.vat,
+          grandTotal: record.grandTotal,
+          contactName: record.contactName,
+          contactEmail: record.contactEmail,
+          company: record.company,
+          phone: record.phone,
+          poNumber: record.poNumber,
+          deliveryLine1: record.deliveryLine1,
+          deliveryLine2: record.deliveryLine2,
+          deliveryCity: record.deliveryCity,
+          deliveryPostcode: record.deliveryPostcode,
+          notes: record.notes,
+        });
+      } else {
+        const raw = sessionStorage.getItem(`order_${id}`);
+        if (raw) {
+          try {
+            setOrder(JSON.parse(raw) as OrderData);
+          } catch {
+            setNotFound(true);
+          }
+        } else {
+          setNotFound(true);
+        }
       }
-    } else {
-      setNotFound(true);
     }
+    load();
   }, [id]);
 
   if (notFound) {

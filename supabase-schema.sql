@@ -176,6 +176,54 @@ alter table public.client_proof_images               disable row level security;
 alter table public.client_specific_proof_images      disable row level security;
 
 -- ---------------------------------------------------------------------------
+-- Orders table
+-- ---------------------------------------------------------------------------
+create table if not exists public.orders (
+  id              text primary key,
+  client_id       text not null,
+  contact_name    text not null,
+  contact_email   text not null,
+  company         text not null,
+  phone           text,
+  po_number       text,
+  delivery_line1  text not null,
+  delivery_line2  text,
+  delivery_city   text not null,
+  delivery_postcode text not null,
+  notes           text,
+  subtotal        numeric(10,2) not null,
+  vat             numeric(10,2) not null,
+  grand_total     numeric(10,2) not null,
+  status          text not null default 'pending',
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now(),
+  foreign key (client_id) references public.clients(id) on delete restrict
+);
+
+-- ---------------------------------------------------------------------------
+-- Order items table
+-- ---------------------------------------------------------------------------
+create table if not exists public.order_items (
+  id           bigserial primary key,
+  order_id     text not null,
+  category_id  text not null,
+  category_name text not null,
+  proof_id     text not null,
+  proof_name   text not null,
+  quantity     integer not null,
+  unit_price   numeric(10,2) not null,
+  total        numeric(10,2) not null,
+  foreign key (order_id) references public.orders(id) on delete cascade
+);
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security — disable for simplicity (all access via service role key)
+-- Or enable RLS and add policies that match your auth strategy.
+-- ---------------------------------------------------------------------------
+alter table public.orders                             disable row level security;
+alter table public.order_items                        disable row level security;
+
+-- ---------------------------------------------------------------------------
 -- Storage bucket for proof images
 -- ---------------------------------------------------------------------------
 -- Run this in your Supabase project:
