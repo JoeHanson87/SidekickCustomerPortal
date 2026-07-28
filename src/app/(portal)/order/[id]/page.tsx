@@ -4,7 +4,7 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import SidekickLogo from '@/components/SidekickLogo';
 import { getOrderById } from '@/lib/admin';
-import type { OrderRecord, OrderItemRecord } from '@/lib/admin';
+import type { OrderItemRecord } from '@/lib/admin';
 
 interface OrderData {
   id: string;

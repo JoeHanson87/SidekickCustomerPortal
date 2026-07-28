@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { getOrderById, updateOrderStatus } from '@/lib/admin';
 import type { OrderRecord } from '@/lib/admin';
 
@@ -14,7 +13,6 @@ const STATUSES = ['pending', 'processing', 'shipped', 'completed', 'cancelled'];
 
 export default function OrderDetailPage({ params }: PageProps) {
   const { id } = use(params);
-  const router = useRouter();
   const [order, setOrder] = useState<OrderRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<string>('');
